@@ -20,7 +20,9 @@ Visit [EKS user guide](https://docs.aws.amazon.com/eks/latest/userguide/pod-id-h
 * `make docker` will build an image using `docker buildx`.
 * `make fips-docker` builds a FIPS-oriented image with the Red Hat Go
   system-crypto toolchain and UBI minimal runtime. Set `FIPS_GOLANG_IMAGE` and
-  `FIPS_BASE_IMAGE` to approved immutable image digests in release builds.
+  `FIPS_BASE_IMAGE` to approved immutable image digests in release builds. The
+  image is tagged locally as `eks-pod-identity-agent:0.1.0-fips`; override it
+  with `FIPS_IMAGE` when needed.
 * `make push` gives an example push the image to an aws ecr.
 
 The FIPS build requires a FIPS-enabled runtime and separately verified

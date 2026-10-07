@@ -51,10 +51,13 @@ docker:
 
 FIPS_GOLANG_IMAGE ?= registry.access.redhat.com/ubi9/go-toolset:latest
 FIPS_BASE_IMAGE ?= registry.access.redhat.com/ubi9/ubi-minimal:latest
+FIPS_IMAGE ?= eks-pod-identity-agent
 FIPS_DOCKER_ARGS = --build-arg golang_image="$(FIPS_GOLANG_IMAGE)" \
 	--build-arg base_image="$(FIPS_BASE_IMAGE)" \
 	--network=host
 
+fips-docker: REGISTRY_ID =
+fips-docker: IMAGE = $(FIPS_IMAGE)
 fips-docker:
 	@echo 'Building FIPS image $(IMAGE):$(TAG)-fips...'
 	BUILDAH_LAYERS=true docker build $(FIPS_DOCKER_ARGS) \
