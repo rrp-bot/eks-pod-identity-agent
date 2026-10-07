@@ -18,7 +18,14 @@ Visit [EKS user guide](https://docs.aws.amazon.com/eks/latest/userguide/pod-id-h
 * `make dev`  runs pod identity agent locally.
 * `test`, `test-verbose`, `format`,`lint` and `vet` provide ways to run the respective tests/tools and should be run before submitting a PR.
 * `make docker` will build an image using `docker buildx`.
+* `make fips-docker` builds a FIPS-oriented image with the Red Hat Go
+  system-crypto toolchain and UBI minimal runtime. Set `FIPS_GOLANG_IMAGE` and
+  `FIPS_BASE_IMAGE` to approved immutable image digests in release builds.
 * `make push` gives an example push the image to an aws ecr.
+
+The FIPS build requires a FIPS-enabled runtime and separately verified
+toolchain, runtime, and OpenSSL module within the required CMVP boundary. The
+build profile alone does not confer FIPS 140 validation.
 
 ## Installation
 
@@ -68,4 +75,3 @@ See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more inform
 ## License
 
 This project is licensed under the Apache-2.0 License.
-

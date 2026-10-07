@@ -1,0 +1,23 @@
+ARG golang_image
+ARG base_image
+
+# The Red Hat Go toolchain supplies system-crypto support. Pin both images to
+# approved content in the release environment.
+FROM ${golang_image} AS builder
+WORKDIR /workspace
+ARG TARGETOS TARGETARCH
+ENV GO111MODULE=on \
+    GOPROXY=direct \
+    CGO_ENABLED=1 \
+    GOFIPS140=certified \
+    GO_BUILD_TAGS=strictfipsruntime,no_openssl \
+    GOFLAGS=-buildvcs=false
+COPY . .
+RUN GOOS=$TARGETOS GOARCH=$TARGETARCH make build
+
+FROM ${base_image}
+RUN microdnf install -y ca-certificates openssl-libs \
+    && microdnf clean all
+ENV GODEBUG=fips140=auto
+COPY --from=builder /workspace/_output/${TARGETARCH}/bin/eks-pod-identity-agent \
+    /eks-pod-identity-agent

@@ -11,6 +11,12 @@ GIT_VERSION_SHORT := $(shell git describe --tags --abbrev=0 --always)
 GIT_COMMIT_ID := $(shell git show -s --format=%H)
 GOOS?=$(shell go env GOOS)
 GOARCH?=$(shell go env GOARCH)
+CGO_ENABLED ?= 0
+export CGO_ENABLED
+GOFIPS140 ?=
+export GOFIPS140
+GO_BUILD_TAGS ?=
+export GO_BUILD_TAGS
 OUTPUT := _output/$(GOARCH)
 BINARY := $(OUTPUT)/bin/eks-pod-identity-agent
 
@@ -38,10 +44,21 @@ IMAGE?=$(REGISTRY_ID).dkr.ecr.$(REGION).amazonaws.com/$(IMAGE_NAME)
 TAG?=0.1.0
 
 
-.PHONY: docker
+.PHONY: docker fips-docker
 docker:
 	@echo 'Building image $(IMAGE)...'
 	docker buildx build --platform=linux/amd64 --progress plain --output=type=docker -t $(IMAGE):$(TAG) .
+
+FIPS_GOLANG_IMAGE ?= registry.access.redhat.com/ubi9/go-toolset:latest
+FIPS_BASE_IMAGE ?= registry.access.redhat.com/ubi9/ubi-minimal:latest
+FIPS_DOCKER_ARGS = --build-arg golang_image="$(FIPS_GOLANG_IMAGE)" \
+	--build-arg base_image="$(FIPS_BASE_IMAGE)" \
+	--network=host
+
+fips-docker:
+	@echo 'Building FIPS image $(IMAGE):$(TAG)-fips...'
+	BUILDAH_LAYERS=true docker build $(FIPS_DOCKER_ARGS) \
+		-t $(IMAGE):$(TAG)-fips -f Dockerfile.fips .
 
 .PHONY: push
 push: docker
@@ -51,7 +68,8 @@ push: docker
 .PHONY: build
 build:
 	@echo "Building eks-pod-identity-agent for $(shell go env GOOS)/$(GOARCH)"
-	GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go build \
+	GOOS=$(GOOS) GOARCH=$(GOARCH) go build \
+		$(if $(GO_BUILD_TAGS),-tags $(GO_BUILD_TAGS),) \
 		-ldflags "-X 'k8s.io/component-base/version.gitVersion=$(GIT_VERSION_SHORT)' \
 		-X 'k8s.io/component-base/version.gitCommit=$(GIT_COMMIT_ID)' \
 		-X 'k8s.io/component-base/version/verflag.programName=eks-pod-identity-agent' \
